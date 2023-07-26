@@ -1,29 +1,22 @@
-#include <stdio.h>      /* DWMSSS - DWM System Status String            |  | */
-#include <stdlib.h>     /* My super stupid simple dwm status     Sss    /  / */
-#include <time.h>       /* v1.0 from github.com/ir33k/dwmsss       ____/  /  */
-#include <fcntl.h>      /* Public domain (www.unlicense.org)      / o    /   */
-#include <unistd.h>     /* snake, snake, snake, snake, snake   >--\_____/    */
+#include <stdio.h>      /* DWM System Status String    sss   __/ /  */
+#include <time.h>       /* v1.0 @irek Public domain       >~('__/   */
 
 #define BAT0	"/sys/bus/acpi/drivers/battery/PNP0C0A:00/power_supply/BAT0"
 
-/* Read content of file under PATH into BUF of SIZ-1.
- * Terminate with NULL and return string length. */
-static int cat(char *path, char *buf, int siz) {
-	int fd = open(path, O_RDONLY);
-	if (fd < 0) return 0;
-	if ((siz = read(fd, buf, siz-1))) buf[siz] = 0;
-	if (close(fd) == -1) return 0;
-	return siz;
+/* Read file under PATH into BUF of SIZ-1, return string length. */
+static int cat(const char *path, char *buf, int siz) {
+	FILE *fp = fopen(path, "r");
+	if (!fp) return 0;
+	if ((siz = fread(buf, 1, siz-1, fp))) buf[siz] = 0;
+	return (fclose(fp) == -1) ? 0 : siz;
 }
 
-/* Execute CMD command writing stdout to BUF of SIZ-1.
- * Terminate with NULL and return string length. */
+/* Run CMD reading stdout to BUF of SIZ-1, return string length. */
 static int cmd(const char *cmd, char *buf, int siz) {
 	FILE *fp = popen(cmd, "r");
 	if (!fp) return 0;
 	if ((siz = fread(buf, 1, siz-1, fp))) buf[siz] = 0;
-	if (pclose(fp) == -1) return 0;
-	return siz;
+	return (pclose(fp) == -1) ? 0 : siz;
 }
 
 static char *wifi(void) {
@@ -34,19 +27,18 @@ static char *wifi(void) {
 
 static char *volume(void) {
 	static char buf[8];
-	int n = cmd("amixer get Master | grep -Eom1 '[0-9]{1,3}%'", buf, 8);
-	buf[n-2] = 0;	/* Trim right */
+	int n = cmd("amixer get Master | grep -om1 '[0-9]\\+%'", buf, 8);
+	buf[n-2] = 0;	/* Trim "%\n" */
 	return buf;
 }
 
 static char *battery(void) {
 	static char buf[8];
-	char capacity;
-	cat(BAT0"/capacity", buf, 4);
-	capacity = atoi(buf);
+	int n;
 	cat(BAT0"/status", buf, 2);
-	if (buf[0] != 'C') capacity *= -1;	/* Not charging */
-	snprintf(buf, 8, "%+d", capacity);
+	buf[0] = buf[0] == 'C' ? '+' : '-';
+	n = cat(BAT0"/capacity", buf+1, 6);
+	buf[n] = 0;	/* Trim "\n" */
 	return buf;
 }
 
@@ -59,5 +51,5 @@ static char *date(void) {
 
 int main(void) {
 	return printf(" %s@ %sv %sb | %s",
-	      wifi(), volume(), battery(), date()) < 0;
+		wifi(), volume(), battery(), date()) < 0;
 }
