@@ -1,44 +1,38 @@
-#include <stdio.h>      /* DWM System Status String    sss   __/ /  */
-#include <time.h>       /* v1.0 @irek Public domain       >~('__/   */
+#include <stdio.h>      /* DWM System Status String       sss   / / */
+#include <stdlib.h>     /* v1.0 github.com/ir33k/dwmsss      __/ /  */
+#include <time.h>       /* Public domain, unlicense.org   >~('__/   */
 
-#define BAT0	"/sys/bus/acpi/drivers/battery/PNP0C0A:00/power_supply/BAT0"
+#define TMP	"/tmp/dwmsss"
+#define BAT	"/sys/bus/acpi/drivers/battery/PNP0C0A:00/power_supply/BAT0"
 
-/* Read file under PATH into BUF of SIZ-1, return string length. */
-static int cat(const char *path, char *buf, int siz) {
+/* Read file under PATH into BUF of SIZ-1 as string. */
+void cat(const char *path, char *buf, int siz) {
 	FILE *fp = fopen(path, "r");
-	if (!fp) return 0;
+	if (!fp) return;
 	if ((siz = fread(buf, 1, siz-1, fp))) buf[siz] = 0;
-	return (fclose(fp) == -1) ? 0 : siz;
-}
-
-/* Run CMD reading stdout to BUF of SIZ-1, return string length. */
-static int cmd(const char *cmd, char *buf, int siz) {
-	FILE *fp = popen(cmd, "r");
-	if (!fp) return 0;
-	if ((siz = fread(buf, 1, siz-1, fp))) buf[siz] = 0;
-	return (pclose(fp) == -1) ? 0 : siz;
+	fclose(fp);
 }
 
 static char *wifi(void) {
 	static char buf[4] = "...";
-	cmd("nmcli -g NAME con show --active", buf, 4);
+	system("nmcli -g NAME con show --active >"TMP);
+	cat(TMP, buf, 4);
 	return buf;
 }
 
 static char *volume(void) {
 	static char buf[8];
-	int n = cmd("amixer get Master | grep -om1 '[0-9]\\+%'", buf, 8);
-	buf[n-2] = 0;	/* Trim "%\n" */
+	system("amixer get Master | grep -om1 '[0-9]\\+%' >"TMP);
+	cat(TMP, buf, 8);
+	sprintf(buf, "%d", atoi(buf));
 	return buf;
 }
 
 static char *battery(void) {
 	static char buf[8];
-	int n;
-	cat(BAT0"/status", buf, 2);
-	buf[0] = buf[0] == 'C' ? '+' : '-';
-	n = cat(BAT0"/capacity", buf+1, 6);
-	buf[n] = 0;	/* Trim "\n" */
+	cat(BAT"/status", buf, 2);
+	cat(BAT"/capacity", buf+1, 6);
+	sprintf(buf, "%c%d", *buf == 'C' ? '+' : '-', atoi(buf+1));
 	return buf;
 }
 
