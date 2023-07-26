@@ -6,34 +6,34 @@
 #define BAT	"/sys/bus/acpi/drivers/battery/PNP0C0A:00/power_supply/BAT0"
 #define WLP     "/sys/class/net/wlp3s0"
 
-/* Read file under PATH into BUF of SIZ-1 as string. */
-void cat(const char *path, char *buf, int siz) {
+/* Read first word from file under PATH into BUF or SIZ as string.
+ * ASCII characters smaller than 48 ('0') are consider delimiters. */
+void word(const char *path, char *buf, int siz) {
 	FILE *fp = fopen(path, "r");
 	if (!fp) return;
-	if ((siz = fread(buf, 1, siz-1, fp))) buf[siz] = 0;
+	while (--siz && (*buf = getc(fp)) > 47) buf += 1;
+	*buf = 0;
 	fclose(fp);
 }
 
 static char *wifi(void) {
-	static char buf[6];
-	cat(WLP"/operstate", buf, 2);
-	sprintf(buf, "%s", *buf == 'u' ? "up" : "down");
+	static char buf[8];
+	word(WLP"/operstate", buf, 8);
 	return buf;
 }
 
 static char *volume(void) {
 	static char buf[8];
 	system("amixer get Master | grep -om1 '[0-9]\\+%' >"TMP);
-	cat(TMP, buf, 8);
-	sprintf(buf, "%d", atoi(buf));
+	word(TMP, buf, 8);
 	return buf;
 }
 
 static char *battery(void) {
 	static char buf[8];
-	cat(BAT"/status", buf, 2);
-	cat(BAT"/capacity", buf+1, 6);
-	sprintf(buf, "%c%d", *buf == 'C' ? '+' : '-', atoi(buf+1));
+	word(BAT"/status", buf, 2);
+	word(BAT"/capacity", buf+1, 6);
+	buf[0] = buf[0] == 'C' ? '+' : '-';
 	return buf;
 }
 
