@@ -1,9 +1,10 @@
-#include <stdio.h>      /* DWM System Status String       sss   / / */
-#include <stdlib.h>     /* v1.0 github.com/ir33k/dwmsss      __/ /  */
-#include <time.h>       /* Public domain, unlicense.org   >~('__/   */
+#include <stdio.h>      /* DWM System Status String v1.0   sss  / / */
+#include <stdlib.h>     /* From: github.com/ir33k/dwmsss     __/ /  */
+#include <time.h>       /* Public domain (unlicense.org)  >~('__/   */
 
 #define TMP	"/tmp/dwmsss"
 #define BAT	"/sys/bus/acpi/drivers/battery/PNP0C0A:00/power_supply/BAT0"
+#define WLP     "/sys/class/net/wlp3s0"
 
 /* Read file under PATH into BUF of SIZ-1 as string. */
 void cat(const char *path, char *buf, int siz) {
@@ -14,9 +15,9 @@ void cat(const char *path, char *buf, int siz) {
 }
 
 static char *wifi(void) {
-	static char buf[4] = "...";
-	system("nmcli -g NAME con show --active >"TMP);
-	cat(TMP, buf, 4);
+	static char buf[6];
+	cat(WLP"/operstate", buf, 2);
+	sprintf(buf, "%s", *buf == 'u' ? "up" : "down");
 	return buf;
 }
 
