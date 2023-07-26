@@ -1,4 +1,4 @@
-#include <stdio.h>      /* DWM System Status String v1.0   sss  / / */
+#include <stdio.h>      /* DWM System Status String v1.4   sss  / / */
 #include <stdlib.h>     /* From: github.com/ir33k/dwmsss     __/ /  */
 #include <time.h>       /* Public domain (unlicense.org)  >~('__/   */
 
