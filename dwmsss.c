@@ -1,8 +1,8 @@
-#include <stdio.h>      /* DWM System Status String v2.3   sss  / / */
+#include <stdio.h>      /* DWM System Status String v2.4   sss  / / */
 #include <stdlib.h>     /* From: github.com/ir33k/dwmsss     __/ /  */
 #include <time.h>       /* Public domain (unlicense.org)  >~('__/   */
 
-/* Read first word from file under PATH into BUF or SIZ as string.
+/* Read first word from file under PATH into BUF of SIZ as string.
  * ASCII characters smaller than 48 ('0') are consider delimiters. */
 void word(char *buf, int siz, const char *path) {
 	FILE *fp = fopen(path, "r");
